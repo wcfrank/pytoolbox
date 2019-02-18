@@ -33,3 +33,10 @@
 在第2步时遇到问题：无法通过Ctrl+Alt+F1进入字符界面，后来发现这篇博客：
 
 [Ubuntu 16.04纯文本界面、图形化界面切换方法](https://blog.csdn.net/davidhopper/article/details/79288573)
+
+然后又遇到了问题，reboot之后黑屏，无法启动图形界面。再参考：
+
+[Ubuntu开机无法进入系统问题（NVIDIA显卡驱动相关）](https://blog.csdn.net/ezhchai/article/details/78788564) 进入recovery mode,
+
+[ubuntu16.04开机启动字符界面的方法](https://www.jb51.net/os/Ubuntu/547039.html) 输入`sudo systemctl start ligthdm` 手动进入图形界面，然后再在terminal里面输一遍`$sudo  systemctl  set-default    graphical.target`，然后就莫名其妙的好了。。。
+
