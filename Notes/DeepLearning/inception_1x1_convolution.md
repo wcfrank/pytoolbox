@@ -33,7 +33,7 @@ GoogLeNet利用1×1的卷积降维后，得到了更为紧凑的网络结构，�
 
 ## 跨通道信息交互（channal 的变换）
 
-例子：使用1x1卷积核，实现降维和升维的操作其实就是channel间信息的线性组合变化，3x3，64channels的卷积核后面添加一个1x1，28channels的卷积核，就变成了3x3，28channels的卷积核，原来的64个channels就可以理解为跨通道线性组合变成了28channels，这就是通道间的信息交互[7]。
+例子：使用1x1卷积核，实现降维和升维的操作其实就是channel间信息的线性组合变化，3x3，64channels的卷积核后面添加一个1x1，28channels的卷积核(ResNet)，就变成了3x3，28channels的卷积核，原来的64个channels就可以理解为跨通道线性组合变成了28channels，这就是通道间的信息交互[7]。
 
 注意：只是在channel维度上做线性组合，W和H上是共享权值的sliding window
 
