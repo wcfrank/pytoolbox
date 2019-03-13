@@ -23,10 +23,26 @@ Dropout strategy focus on randomly discarding neurons to prevent over-fitting. F
 
 In nature, BN and drop-off serves different purpose while in the meantime, they may lead to similar effects. So from this perspective, whether or not use them should depends on your task and network structure. Once formulating your problem properly, you can try them both, either or neither.
 
+**from [4]**
+
+BN跟在activation函数的前面和后面都可以，放在前面比较符合逻辑，但keras是在后面。
+
+Batch size要够大，如果太小的话BN的效果会变差。
+
+好处：
+
+- BN减少了训练时间，可以训练更深的网络，learning rate可以设的大一点
+
+- 减小gradient vanishing和exploding， 适合sigmoid、tanh等激活函数
+- 受参数初始化的影响小
+- 减少过拟合
+
+
+
 References:
 
 1. [Can dropout and batch normalization be applied to convolution layers](https://datascience.stackexchange.com/questions/25722/can-dropout-and-batch-normalization-be-applied-to-convolution-layers)
-
 2. [What is the difference between dropout and batch normalization?](https://www.quora.com/What-is-the-difference-between-dropout-and-batch-normalization)
 3. [Should I use a dropout layer if I am using batch normalization in neural network training?](https://www.quora.com/Should-I-use-a-dropout-layer-if-I-am-using-batch-normalization-in-neural-network-training)
+4. 深度学习李宏毅视频-Batch Normalization
 
