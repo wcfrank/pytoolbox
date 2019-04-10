@@ -49,6 +49,81 @@
 
 3. **互信息和最大信息系数** Mutual information and maximal information coefficient (MIC)
 
+   MI评价自变量与因变量的相关性。当$$x_i$$为0/1取值时，$$MI(x_i,y) = \sum\limits_{x_i\in\{0,1\}}\sum\limits_{y\in\{0,1\}}p(x_i,y)\log\frac{p(x_i,y)}{p(x_i)p(y)}$$，同理也很容易推广到多个离散值情形。可以发现MI衡量的是$$x_i$$和$$y$$的独立性，如果两者独立，MI=0，即$$x_i$$和$$y$$不相关，可以去除$$x_i$$；反之两者相关，MI会很大。
+
+   MI的缺点：不属于度量方式，无法归一化；无法计算连续值特征，通常需要先离散化，但对离散化方式很敏感。
+
+   MIC解决MI的缺点：首先，寻找最优的离散化方式；然后，把MI变成一种度量方式，区间为$$[0,1]$$
+
+4. Variance Threshold
+
+   但这种方法不需要度量特征$$x_i$$和标签$$y$$的关系。计算各个特征的方差，然后根据阈值选择方差大于阈值的特征。
+
+   ```python
+   from sklearn.feature_selection import VarianceThreshold
+   X = [[0, 0, 1], [0, 1, 0], [1, 0, 0], [0, 1, 1], [0, 1, 0], [0, 1, 1]]
+   sel = VarianceThreshold(threshold=(.8 * (1 - .8)))
+   print(sel.fit_transform(X))
+   ```
+
+   
+
+## Wrapper特征选择[1]
+
+在确定模型之后，不断的使用不同的特征组合来测试模型的表现，一般选用普遍效果较好的算法，如RF，SVM，kNN等。
+
+- 前向搜索：每次从未选中的特征集合中选出一个加入，直到达到阈值或n为止
+
+- 后向搜索：每一步删除一个特征
+
+- 递归特征消除法RFE：使用一个模型进行多轮训练，每轮训练后消除某些特征，再基于新特征进行下一轮训练。
+
+  ```python
+  from sklearn.feature_selection import RFE
+  from sklearn.linear_model import LogisticRegression
+  #递归特征消除法，返回特征选择后的数据
+  #参数estimator为基模型
+  #参数n_features_to_select为选择的特征个数
+  RFE(estimator=LogisticRegression(), n_features_to_select=2).fit_transform(iris.data, iris.target)
+  ```
+
+
+
+## Embedded特征选择
+
+- 基于惩罚项：
+
+  L1正则项具有稀疏解的特性，适合特征选择。但L1没选到的特征不代表不重要，因为两个高相关性的特征可能只保留了一个。如果要确定哪个特征重要，再通过L2正则交叉验证。
+
+- 基于模型的特征排序：
+
+  直接用你要用的模型，对每个**单独**特征和标签$$y$$建立模型。假设此特征和标签的关系是非线形的，可用tree based模型，因为他们适合非线形关系的模型，但要注意防止过拟合，树的深度不要大，并运用交叉验证。
+
+  ```python
+  from sklearn.cross_validation import cross_val_score, ShuffleSplit
+  from sklearn.datasets import load_boston
+  from sklearn.ensemble import RandomForestRegressor
+  
+  boston = load_boston()
+  X = boston["data"]
+  Y = boston["target"]
+  names = boston["feature_names"]
+  
+  rf = RandomForestRegressor(n_estimators=20, max_depth=4)
+  scores = []
+  for i in range(X.shape[1]):
+       #每次选择一个特征，进行交叉验证，训练集和测试集为7:3的比例进行分配，
+       #ShuffleSplit()函数用于随机抽样（数据集总数，迭代次数，test所占比例）
+       score = cross_val_score(rf, X[:, i:i+1], Y, scoring="r2",
+                                cv=ShuffleSplit(len(X), 3, .3))
+       scores.append((round(np.mean(score), 3), names[i]))
+  
+  #打印出各个特征所对应的得分
+  print(sorted(scores, reverse=True))
+  ```
+
+  
+
 ## 参考资料
 
 sklearn.feature_selection模块适用于样本的特征选择/维数降低
