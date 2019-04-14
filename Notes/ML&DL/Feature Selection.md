@@ -87,7 +87,7 @@
   RFE(estimator=LogisticRegression(), n_features_to_select=2).fit_transform(iris.data, iris.target)
   ```
 
-
+- Stability Selection
 
 ## Embedded特征选择
 
@@ -129,5 +129,5 @@
 sklearn.feature_selection模块适用于样本的特征选择/维数降低
 
 1. [特征选择](https://zhuanlan.zhihu.com/p/32749489)
-
 2. [Statistical meaning of pearsonr() output in Python](https://stats.stackexchange.com/questions/64676/statistical-meaning-of-pearsonr-output-in-python)
+3. (kaggle)[Feature Ranking RFE, Random Forest, linear models](https://www.kaggle.com/arthurtok/feature-ranking-rfe-random-forest-linear-models)
