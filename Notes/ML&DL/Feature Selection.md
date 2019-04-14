@@ -84,16 +84,58 @@
   #递归特征消除法，返回特征选择后的数据
   #参数estimator为基模型
   #参数n_features_to_select为选择的特征个数
-  RFE(estimator=LogisticRegression(), n_features_to_select=2).fit_transform(iris.data, iris.target)
+  rfe = RFE(estimator=LogisticRegression(), n_features_to_select=2, verbose=3)
+  rfe.fit(iris.data, iris.target)
+  rfe.ranking_
+  ```
+  [4]：
+
+  ```python
+  from sklearn.feature_selection import RFECV
+  all_features = [...]
+  rfr = RandomForestRegressor(n_estimators=100, max_features='sqrt', max_depth=12, n_jobs=-1)
+  rfecv = RFECV(estimator=rfr, step=10, 
+                cv=KFold(y.shape[0], n_folds=5, shuffle=False, random_state=101),
+                scoring='neg_mean_absolute_error', verbose=2)
+  rfecv.fit(X, y)
+  sel_features = [f for f, s in zip(all_features, rfecv.support_) if s]
+  
+  print(' Optimal number of features: %d' % rfecv.n_features_)
+  print(' The selected features are {}'.format(sel_features))
+  
+  # Save sorted feature rankings
+  ranking = pd.DataFrame({'Features': all_features})
+  ranking['Rank'] = np.asarray(rfecv.ranking_)
+  ranking.sort_values('Rank', inplace=True)
   ```
 
-- Stability Selection
+  
 
 ## Embedded特征选择
 
 - 基于惩罚项：
 
   L1正则项具有稀疏解的特性，适合特征选择。但L1没选到的特征不代表不重要，因为两个高相关性的特征可能只保留了一个。如果要确定哪个特征重要，再通过L2正则交叉验证。
+
+- Linear Model:
+
+  sklearn可使用线性模型的.coef_来返回线性模型训练后的特征权重
+
+  ```python
+  lr = LinearRegression(normalize=True)
+  lr.fit(X,Y)
+  print(np.abs(lr.coef_))
+  
+  ridge = Ridge(alpha = 7)
+  ridge.fit(X,Y)
+  print(np.abs(ridge.coef_)
+  
+  lasso = Lasso(alpha=.05)
+  lasso.fit(X, Y)
+  print(lasso.coef_)
+  ```
+
+- Random Forest: .feature_importances_
 
 - 基于模型的特征排序：
 
@@ -129,5 +171,15 @@
 sklearn.feature_selection模块适用于样本的特征选择/维数降低
 
 1. [特征选择](https://zhuanlan.zhihu.com/p/32749489)
+
 2. [Statistical meaning of pearsonr() output in Python](https://stats.stackexchange.com/questions/64676/statistical-meaning-of-pearsonr-output-in-python)
+
 3. (kaggle)[Feature Ranking RFE, Random Forest, linear models](https://www.kaggle.com/arthurtok/feature-ranking-rfe-random-forest-linear-models)
+
+   Compare different kinds of feature ranking: Stability selection, recursive feature elimination, linear model, random forest feature ranking. Then create a feature ranking matrix, each column presents one feature ranking, using the function `ranking` to scale the ranking from 0 to 1. 
+
+   最后，seaborn的pariplot(feature distribution)、heatmap(feature correlation)和factorplot(catplot)很漂亮。
+
+
+4. [Recursive feature elimination](https://www.kaggle.com/tilii7/recursive-feature-elimination/code)
+5. [Boruta feature elimination](https://www.kaggle.com/tilii7/boruta-feature-elimination)
