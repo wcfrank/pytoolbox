@@ -1,20 +1,20 @@
 # Feature Selection
 
-特征选择是特征工程里的一个重要问题，目的是找到最优特征子集。减少特征个数，减少运行时间，提高模型精确度。
+特征选择是特征工程里的一个重要问题，目的是找到最优特征子集。**减少特征个数**，减少运行时间，提高模型精确度；**更好的理解特征**，及其与label之间的相关性。
 
 - Filter（过滤法）：按照发散性或者相关性对各个特征进行评分，设定阈值或者待选择阈值的个数，选择特征。
 - Wrapper（包装法）：根据目标函数（通常是预测效果评分），每次选择若干特征，或者排除若干特征。
 - Embedded（嵌入法）：先使用某些机器学习的算法和模型进行训练，得到各个特征的权值系数，根据系数从大到小排序选择特征。类似于Filter方法，但是是通过训练来确定特征的优劣。
 
-## Filter特征选择
+## Filter特征选择(Univariate selection)
 
 针对样本的每个特征$$x_i~(i=1,\dots,n)$$，计算$$x_i$$与label标签$$y$$的信息量$$S(i)$$，得到$$n$$个结果，选择前$$k$$个信息量最大的特征。即选取与$$y$$关联最密切的一些特征$$x_i$$。下面介绍几种度量$$S(i)$$的方法：
 
 1. Pearson相关系数
 
-   衡量变量之间的线性相关性，结果取值为$$[-1,1]$$，-1表示完全负相关，+1表示完全正相关，0表示没有**线性**相关。
+   衡量变量之间的线性相关性(linear correlation)，结果取值为$$[-1,1]$$，-1表示完全负相关，+1表示完全正相关，0表示没有**线性**相关。
 
-   简单，计算速度快；但只对线性关系敏感，如果关系是非线性的，即使两个变量有关联，Pearson相关性也可能接近0。scipy的pearsonr方法能计算相关系数和p-value[2]：
+   简单，计算速度快；但只对线性关系敏感，如果关系是非线性的，即使两个变量有关联，Pearson相关性也可能接近0。scipy的pearsonr方法能计算相关系数和p-value[2], roughly showing the probability of an uncorrelated system creating a correlation value of this magnitude. The p-value is high meaning that it is very likely to observe such correlation on a dataset of this size purely by chance[6]：
 
    ```python
    import numpy as np
@@ -25,13 +25,33 @@
    x = np.random.normal(0, 1, size)
    print("Lower noise", pearsonr(x, x + np.random.normal(0, 1, size)))
    print("Higher noise", pearsonr(x, x + np.random.normal(0, 10, size)))
+   # output: (0.718248, 7.324017e-49), (0.057964, 0.317009)
    ```
 
-   output:
+   类似的，在sklearn中针对回归问题有`f_regression`函数，测量一组变量与label的线性关系的p-value[6]
+   
+   Relying only on the correlation value on interpreting the relationship of two variables can be highly misleading, so it is always worth plotting the data[6]
+   
 
-   (0.718248, 7.324017e-49), (0.057964, 0.317009)
+3. **互信息和最大信息系数** Mutual information and maximal information coefficient (MIC)
 
-2. 卡方验证（**常用**）
+   MI评价自变量与因变量的相关性。当$$x_i$$为0/1取值时，$$MI(x_i,y) = \sum\limits_{x_i\in\{0,1\}}\sum\limits_{y\in\{0,1\}}p(x_i,y)\log\frac{p(x_i,y)}{p(x_i)p(y)}$$，同理也很容易推广到多个离散值情形。可以发现MI衡量的是$$x_i$$和$$y$$的独立性，如果两者独立，MI=0，即$$x_i$$和$$y$$不相关，可以去除$$x_i$$；反之两者相关，MI会很大。
+
+   MI的缺点：不属于度量方式，无法归一化；无法计算连续值特征，通常需要先离散化，但对离散化方式很敏感。
+
+   MIC解决MI的缺点：首先，寻找最优的离散化方式；然后，把MI变成一种度量方式，区间为$$[0,1]$$
+   ```python
+   from minepy import MINE
+   m = MINE()
+   x = np.random.uniform(-1, 1, 10000)
+   m.compute_score(x, x**2)
+   print m.mic() # output: 1, the maximum
+   ```
+2. Distance Correlation
+
+   Pearson相较MIC或者Distance correlation的优势：1. 计算速度快；2. correlaiton的取值区间是[-1,1]，体现正负相关性
+   
+4. 卡方验证（**常用**）
 
    检验自变量与因变量的相关性。假设自变量有N种取值，因变量有M种取值，自变量等于i且因变量等于j的样本频数的观察值与期望的差距：$$\chi^2 = \sum\frac{(A-E)^2}{E}$$.
 
@@ -43,19 +63,12 @@
    X, y = iris.data, iris.target
    #选择K个最好的特征，返回选择特征后的数据
    X_new = SelectKBest(chi2, k=2).fit_transform(X, y)
+   # Output:  X.shape = (150,4), X_new.shape = (150,2)
    ```
 
-   Output:  X.shape = (150,4), X_new.shape = (150,2)
 
-3. **互信息和最大信息系数** Mutual information and maximal information coefficient (MIC)
 
-   MI评价自变量与因变量的相关性。当$$x_i$$为0/1取值时，$$MI(x_i,y) = \sum\limits_{x_i\in\{0,1\}}\sum\limits_{y\in\{0,1\}}p(x_i,y)\log\frac{p(x_i,y)}{p(x_i)p(y)}$$，同理也很容易推广到多个离散值情形。可以发现MI衡量的是$$x_i$$和$$y$$的独立性，如果两者独立，MI=0，即$$x_i$$和$$y$$不相关，可以去除$$x_i$$；反之两者相关，MI会很大。
-
-   MI的缺点：不属于度量方式，无法归一化；无法计算连续值特征，通常需要先离散化，但对离散化方式很敏感。
-
-   MIC解决MI的缺点：首先，寻找最优的离散化方式；然后，把MI变成一种度量方式，区间为$$[0,1]$$
-
-4. Variance Threshold
+5. Variance Threshold
 
    但这种方法不需要度量特征$$x_i$$和标签$$y$$的关系。计算各个特征的方差，然后根据阈值选择方差大于阈值的特征。
 
@@ -183,3 +196,6 @@ sklearn.feature_selection模块适用于样本的特征选择/维数降低
 
 4. [Recursive feature elimination](https://www.kaggle.com/tilii7/recursive-feature-elimination/code)
 5. [Boruta feature elimination](https://www.kaggle.com/tilii7/boruta-feature-elimination)
+6. **精华**[Feature selection – Part I: univariate selection](https://blog.datadive.net/selecting-good-features-part-i-univariate-selection/)
+    
+    Univariate selection examines each feature individually to determine the strength of the relationship of the feature with the lable
