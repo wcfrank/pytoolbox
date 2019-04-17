@@ -29,9 +29,8 @@
    ```
 
    类似的，在sklearn中针对回归问题有`f_regression`函数，测量一组变量与label的线性关系的p-value[6]
-   
+
    Relying only on the correlation value on interpreting the relationship of two variables can be highly misleading, so it is always worth plotting the data[6]
-   
 
 3. **互信息和最大信息系数** Mutual information and maximal information coefficient (MIC)
 
@@ -66,9 +65,33 @@
    # Output:  X.shape = (150,4), X_new.shape = (150,2)
    ```
 
+5. 基于模型的特征排序：
 
+   直接用你要用的模型，对每个**单独**特征和标签$$y$$建立模型。假设此特征和标签的关系是非线形的，可用tree based模型，因为他们适合非线形关系的模型，但要注意防止过拟合，树的深度不要大，并运用交叉验证。
+   ```python
+   from sklearn.cross_validation import cross_val_score, ShuffleSplit
+   from sklearn.datasets import load_boston
+   from sklearn.ensemble import RandomForestRegressor
 
-5. Variance Threshold
+   boston = load_boston()
+   X = boston["data"]
+   Y = boston["target"]
+   names = boston["feature_names"]
+
+   rf = RandomForestRegressor(n_estimators=20, max_depth=4)
+   scores = []
+   for i in range(X.shape[1]):
+        #每次选择一个特征，进行交叉验证，训练集和测试集为7:3的比例进行分配，
+        #ShuffleSplit()函数用于随机抽样（数据集总数，迭代次数，test所占比例）
+        score = cross_val_score(rf, X[:, i:i+1], Y, scoring="r2",
+                                 cv=ShuffleSplit(len(X), 3, .3))
+        scores.append((round(np.mean(score), 3), names[i]))
+
+   #打印出各个特征所对应的得分
+   print(sorted(scores, reverse=True))
+   ```
+
+6. Variance Threshold
 
    但这种方法不需要度量特征$$x_i$$和标签$$y$$的关系。计算各个特征的方差，然后根据阈值选择方差大于阈值的特征。
 
@@ -81,7 +104,7 @@
 
    
 
-## Wrapper特征选择[1]
+## Wrapper特征选择
 
 在确定模型之后，不断的使用不同的特征组合来测试模型的表现，一般选用普遍效果较好的算法，如RF，SVM，kNN等。
 
@@ -126,58 +149,35 @@
 
 ## Embedded特征选择
 
-- 基于惩罚项：
+- Linear Model + 正则化：[7]
 
-  L1正则项具有稀疏解的特性，适合特征选择。但L1没选到的特征不代表不重要，因为两个高相关性的特征可能只保留了一个。如果要确定哪个特征重要，再通过L2正则交叉验证。
+  该方法只适用于所有的特征都经过同样的scale，这样重要的特征对应的系数大，不重要的特征系数接近于0.这个方法适合简单的线性问题，并且数据的噪声不大。但如果问题的特征有multicollinearity：有多个线性相关的特征，将导致线性模型不稳定，即数据有微小的变化会导致模型的系数有较大的改变。例如有一个模型理论上为$$Y=X_1+X_2$$，但观测上有误差$$\hat{Y}=X_1+X_2+\epsilon$$，假设X1和X2是线性相关的$$X_1\approx X_2$$，误差会导致模型训练之后可能为$$Y=2X_1$$（只与X1有关）或者$$Y=-X_1+3X_2$$（X2是强正相关，X1是负相关），但事实上X1和X2都是等价值的正相关。
 
-- Linear Model:
-
-  sklearn可使用线性模型的.coef_来返回线性模型训练后的特征权重
+  加入正则项可以修正。L1正则项具有稀疏解的特性，适合特征选择。但L1同样不稳定，multicollinearity带来的问题依然存在。另外，L1没选到的特征不代表不重要，因为两个高相关性的特征可能只保留了一个。如果要确定哪个特征重要，再通过L2正则交叉验证。L2的效果不同于L1，L2会使特征的系数均分，用L2训练的模型更加稳定。尽管L2不如L1适合做特征选择，L2更适合做特征的解释。
 
   ```python
   lr = LinearRegression(normalize=True)
   lr.fit(X,Y)
-  print(np.abs(lr.coef_))
+  print(np.abs(lr.coef_)) # 模型不稳定，数据的噪声对模型的系数影响较大
   
   ridge = Ridge(alpha = 7)
   ridge.fit(X,Y)
-  print(np.abs(ridge.coef_)
+  print(np.abs(ridge.coef_) # 模型同样不稳定，但可以得到稀疏解；无法确定选出来的特征是否重要
   
   lasso = Lasso(alpha=.05)
   lasso.fit(X, Y)
-  print(lasso.coef_)
+  print(lasso.coef_) # 验证Lasso选择的特征，检验是否其他共线性的特征表现更好；模型稳定
   ```
 
-- Random Forest: .feature_importances_
+- Random Forest: [8]
 
-- 基于模型的特征排序：
+  Mean decrease impurity: 分类问题使用Gini impurity 或者 information gain/entropy，回归问题用variance。在sklearn中使用rf.feature_importances_直接得到。**Mean decrease impurity的缺点**：1.存在bias，倾向于选择取值多的特征。2.如果存在多个correlated特征，从模型角度上出发，其中任何一个都可以用来做预测，没有明显偏好；但是一旦其中一个被使用，其他的correlated特征的重要性将大大降低。如果我们的目的是降低过拟合，那这个问题不重要；但如果我们想要解释模型，这个问题会误导我们，只有一个特征是重要的，其他与之correlated的特征都不重要，然而事实上他们与label的关系是相似的。
 
-  直接用你要用的模型，对每个**单独**特征和标签$$y$$建立模型。假设此特征和标签的关系是非线形的，可用tree based模型，因为他们适合非线形关系的模型，但要注意防止过拟合，树的深度不要大，并运用交叉验证。
-
-  ```python
-  from sklearn.cross_validation import cross_val_score, ShuffleSplit
-  from sklearn.datasets import load_boston
-  from sklearn.ensemble import RandomForestRegressor
-  
-  boston = load_boston()
-  X = boston["data"]
-  Y = boston["target"]
-  names = boston["feature_names"]
-  
-  rf = RandomForestRegressor(n_estimators=20, max_depth=4)
-  scores = []
-  for i in range(X.shape[1]):
-       #每次选择一个特征，进行交叉验证，训练集和测试集为7:3的比例进行分配，
-       #ShuffleSplit()函数用于随机抽样（数据集总数，迭代次数，test所占比例）
-       score = cross_val_score(rf, X[:, i:i+1], Y, scoring="r2",
-                                cv=ShuffleSplit(len(X), 3, .3))
-       scores.append((round(np.mean(score), 3), names[i]))
-  
-  #打印出各个特征所对应的得分
-  print(sorted(scores, reverse=True))
-  ```
+  Mean decrease accuracy:
 
   
+
+
 
 ## 参考资料
 
@@ -195,7 +195,13 @@ sklearn.feature_selection模块适用于样本的特征选择/维数降低
 
 
 4. [Recursive feature elimination](https://www.kaggle.com/tilii7/recursive-feature-elimination/code)
+
 5. [Boruta feature elimination](https://www.kaggle.com/tilii7/boruta-feature-elimination)
-6. **精华**[Feature selection – Part I: univariate selection](https://blog.datadive.net/selecting-good-features-part-i-univariate-selection/)
-    
+
+6. [Feature selection – Part I: univariate selection](https://blog.datadive.net/selecting-good-features-part-i-univariate-selection/) **精华**
+
     Univariate selection examines each feature individually to determine the strength of the relationship of the feature with the lable
+
+7. [Selecting good features – Part II: linear models and regularization](http://blog.datadive.net/selecting-good-features-part-ii-linear-models-and-regularization/)
+   Lasso produces sparse solutions and as such is very useful selecting a strong subset of features for improving model performance. Ridge regression on the other hand can be used for data interpretation due to its stability and the fact that useful features tend to have non-zero coefficients.
+8. [](http://blog.datadive.net/selecting-good-features-part-iii-random-forests/)
