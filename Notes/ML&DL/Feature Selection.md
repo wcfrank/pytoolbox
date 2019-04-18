@@ -112,8 +112,9 @@
 
 - 后向搜索：每一步删除一个特征
 
-- 递归特征消除法RFE：使用一个模型进行多轮训练，每轮训练后消除某些特征，再基于新特征进行下一轮训练。
-
+- 递归特征消除法RFE [9]：使用一个模型进行多轮训练，每轮训练后消除一个或多个重要性最低的特征，再基于新特征进行下一轮训练。sklearn中的RFE只能使用带有`coef_`或者`feature_importances_`的模型（所以SVM只能使用默认的liear核，不能使用rbf核）
+ 
+  RFE明确指定选出几个特征。但使用回归模型时没有正则化会导致模型不稳定，回归模型推荐使用ridge回归。
   ```python
   from sklearn.feature_selection import RFE
   from sklearn.linear_model import LogisticRegression
@@ -124,7 +125,7 @@
   rfe.fit(iris.data, iris.target)
   rfe.ranking_
   ```
-  [4]：
+  RFECV会通过交叉验证选出最佳的特征数量[4]：
 
   ```python
   from sklearn.feature_selection import RFECV
@@ -144,7 +145,8 @@
   ranking['Rank'] = np.asarray(rfecv.ranking_)
   ranking.sort_values('Rank', inplace=True)
   ```
-
+  
+- Stability selection
   
 
 ## Embedded特征选择
@@ -204,4 +206,5 @@ sklearn.feature_selection模块适用于样本的特征选择/维数降低
 
 7. [Selecting good features – Part II: linear models and regularization](http://blog.datadive.net/selecting-good-features-part-ii-linear-models-and-regularization/)
    Lasso produces sparse solutions and as such is very useful selecting a strong subset of features for improving model performance. Ridge regression on the other hand can be used for data interpretation due to its stability and the fact that useful features tend to have non-zero coefficients.
-8. [](http://blog.datadive.net/selecting-good-features-part-iii-random-forests/)
+8. [Selecting good features – Part III: random forests](http://blog.datadive.net/selecting-good-features-part-iii-random-forests/)
+9. [Selecting good features – Part IV: stability selection, RFE and everything side by side](https://blog.datadive.net/selecting-good-features-part-iv-stability-selection-rfe-and-everything-side-by-side/)
