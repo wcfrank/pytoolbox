@@ -208,3 +208,6 @@ sklearn.feature_selection模块适用于样本的特征选择/维数降低
    Lasso produces sparse solutions and as such is very useful selecting a strong subset of features for improving model performance. Ridge regression on the other hand can be used for data interpretation due to its stability and the fact that useful features tend to have non-zero coefficients.
 8. [Selecting good features – Part III: random forests](http://blog.datadive.net/selecting-good-features-part-iii-random-forests/)
 9. [Selecting good features – Part IV: stability selection, RFE and everything side by side](https://blog.datadive.net/selecting-good-features-part-iv-stability-selection-rfe-and-everything-side-by-side/)
+
+https://thuijskens.github.io/2018/07/25/stability-selection/
+https://thuijskens.github.io/2017/10/07/feature-selection/
