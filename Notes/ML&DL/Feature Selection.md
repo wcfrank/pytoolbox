@@ -113,7 +113,7 @@
 - 后向搜索：每一步删除一个特征
 
 - 递归特征消除法RFE [9]：使用一个模型进行多轮训练，每轮训练后消除一个或多个重要性最低的特征，再基于新特征进行下一轮训练。sklearn中的RFE只能使用带有`coef_`或者`feature_importances_`的模型（所以SVM只能使用默认的liear核，不能使用rbf核）
- 
+
   RFE明确指定选出几个特征。但使用回归模型时没有正则化会导致模型不稳定，回归模型推荐使用ridge回归。
   ```python
   from sklearn.feature_selection import RFE
@@ -145,9 +145,14 @@
   ranking['Rank'] = np.asarray(rfecv.ranking_)
   ranking.sort_values('Rank', inplace=True)
   ```
-  
-- Stability selection
-  
+
+- Stability selection [10]:
+
+  The high level idea is to apply a feature selection algorithm on different subsets of data and with different subsets of features. After repeating the process a number of times, the selection results can be aggregated, for example by checking how many times a feature ended up being selected as important when it was in an inspected feature subset. [9]
+
+  to inject more noise into the original problem by generating bootstrap samples of the data, and to use a base feature selection algorithm (like the LASSO) to find out which features are important in every sampled version of the data. The results on each bootstrap sample are then aggregated to compute a *stability score* for each feature in the data. Features can then be selected by choosing an appropriate threshold for the stability scores.
+
+  <https://github.com/scikit-learn-contrib/stability-selection> 
 
 ## Embedded特征选择
 
@@ -175,11 +180,35 @@
 
   Mean decrease impurity: 分类问题使用Gini impurity 或者 information gain/entropy，回归问题用variance。在sklearn中使用rf.feature_importances_直接得到。**Mean decrease impurity的缺点**：1.存在bias，倾向于选择取值多的特征。2.如果存在多个correlated特征，从模型角度上出发，其中任何一个都可以用来做预测，没有明显偏好；但是一旦其中一个被使用，其他的correlated特征的重要性将大大降低。如果我们的目的是降低过拟合，那这个问题不重要；但如果我们想要解释模型，这个问题会误导我们，只有一个特征是重要的，其他与之correlated的特征都不重要，然而事实上他们与label的关系是相似的。
 
-  Mean decrease accuracy:
+  Mean decrease accuracy: 直接衡量每个特征对模型accuracy的影响，将每个特征的顺序打乱permutate然后查看模型accuracy下降了多少。如果特征不重要，accuracy下降少；特征重要accuracy下降多。**此方法是在模型训练完之后，比较测试数据在某特征permutate前后metrics的变化程度。（模型只需要训练一次）**
+
+  ```python
+  from sklearn.cross_validation import ShuffleSplit
+  from sklearn.metrics import r2_score
+   
+  X = boston["data"]
+  Y = boston["target"]
+   
+  rf = RandomForestRegressor()
+  scores = {}
+   
+  #crossvalidate the scores on a number of different random splits of the data
+  for train_idx, test_idx in ShuffleSplit(len(X), 100, .3):
+      X_train, X_test = X[train_idx], X[test_idx]
+      Y_train, Y_test = Y[train_idx], Y[test_idx]
+      rf.fit(X_train, Y_train)
+      acc = r2_score(Y_test, rf.predict(X_test))
+      for i in range(X.shape[1]):
+          X_t = X_test.copy()
+          np.random.shuffle(X_t[:, i])
+          shuff_acc = r2_score(Y_test, rf.predict(X_t))
+          scores[names[i]].append((acc-shuff_acc)/acc)
+  print sorted([(round(np.mean(score), 4), feat) for feat, score in scores.items()], reverse=True)
+  # output: [(0.7276, 'LSTAT'), (0.5675, 'RM'), (0.0867, 'DIS'), (0.0407, 'NOX'), (0.0351, 'CRIM'), (0.0233, 'PTRATIO'), (0.0168, 'TAX'), (0.0122, 'AGE'), (0.005, 'B'), (0.0048, 'INDUS'), (0.0043, 'RAD'), (0.0004, 'ZN'), (0.0001, 'CHAS')]
+  # LSAT and RM are 2 features that strongly impact model performance.
+  ```
 
   
-
-
 
 ## 参考资料
 
@@ -206,8 +235,10 @@ sklearn.feature_selection模块适用于样本的特征选择/维数降低
 
 7. [Selecting good features – Part II: linear models and regularization](http://blog.datadive.net/selecting-good-features-part-ii-linear-models-and-regularization/)
    Lasso produces sparse solutions and as such is very useful selecting a strong subset of features for improving model performance. Ridge regression on the other hand can be used for data interpretation due to its stability and the fact that useful features tend to have non-zero coefficients.
+
 8. [Selecting good features – Part III: random forests](http://blog.datadive.net/selecting-good-features-part-iii-random-forests/)
+
 9. [Selecting good features – Part IV: stability selection, RFE and everything side by side](https://blog.datadive.net/selecting-good-features-part-iv-stability-selection-rfe-and-everything-side-by-side/)
 
-https://thuijskens.github.io/2018/07/25/stability-selection/
-https://thuijskens.github.io/2017/10/07/feature-selection/
+10. https://thuijskens.github.io/2018/07/25/stability-selection/
+   https://thuijskens.github.io/2017/10/07/feature-selection/
