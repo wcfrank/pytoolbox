@@ -152,7 +152,31 @@
 
   Inject more noise into the original problem by generating bootstrap samples of the data, and to use a base feature selection algorithm (like the LASSO) to find out which features are important in every sampled version of the data. The results on each bootstrap sample are then aggregated to compute a *stability score* for each feature in the data. Features can then be selected by choosing an appropriate threshold for the stability scores. [10]
 
-  
+  N：有放回采样（bootstrap sampling）的次数
+
+  $$\lambda​$$：模型正则化参数，a grid of values
+
+  k：第k个特征
+
+  $$\hat{\Pi}^{\lambda}_k$$：当正则化参数为$$\lambda$$时，特征k被选择的概率
+
+  $$\hat{S}^{\lambda}_i​$$：第$$i​$$次采样，模型正则化参数为$$\lambda​$$时选出来的特征子集
+
+  $$\hat{S}^{stable} \subset \{1,\dots,p\}​$$：最终输出的特征选择子集，其中p为总特征个数
+
+  **step1:采样**， 对于每个正则化参数$$\lambda$$:
+
+  - for i=1,...,N:
+
+    对原样本$$X^{n*p}$$进行有放回采样，采样的大小为$$\frac{n}{2}$$;
+
+    在采样的样本上训练模型（如lasso），选择出特征的子集$$\hat{S}^{\lambda}_i​$$
+
+  - 计算在$$\lambda$$固定时，不同的采样样本选出特征k的概率$$\hat{\Pi}^\lambda_k = \mathbb{P}[k \in \hat{S}^\lambda] = \frac{1}{N} \sum_{i = 1}^N \mathbb{I}(k \in \hat{S}_i^\lambda)$$
+
+  **step2:评分**， $$\hat{S}^{stable} = \{k: \max\limits_{\lambda}\hat{\Pi}_k^{\lambda}\ge\pi_{thres}\}$$，其中$$\pi_{thres}​$$为一个预设的阈值
+
+  使用[10]的stability-selction库，只要模型中带有`coef_ `或者`feature_importances`属性均可。
 
 ## Embedded特征选择
 
@@ -208,7 +232,10 @@
   # LSAT and RM are 2 features that strongly impact model performance.
   ```
 
-  
+
+- Boruta
+
+  `Boruta` is produced as an improvement over `random forest` variable importance. 
 
 ## 参考资料
 
