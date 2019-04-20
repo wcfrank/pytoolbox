@@ -146,13 +146,13 @@
   ranking.sort_values('Rank', inplace=True)
   ```
 
-- Stability selection [10]:
+- Stability selection:
 
   The high level idea is to apply a feature selection algorithm on different subsets of data and with different subsets of features. After repeating the process a number of times, the selection results can be aggregated, for example by checking how many times a feature ended up being selected as important when it was in an inspected feature subset. [9]
 
-  to inject more noise into the original problem by generating bootstrap samples of the data, and to use a base feature selection algorithm (like the LASSO) to find out which features are important in every sampled version of the data. The results on each bootstrap sample are then aggregated to compute a *stability score* for each feature in the data. Features can then be selected by choosing an appropriate threshold for the stability scores.
+  Inject more noise into the original problem by generating bootstrap samples of the data, and to use a base feature selection algorithm (like the LASSO) to find out which features are important in every sampled version of the data. The results on each bootstrap sample are then aggregated to compute a *stability score* for each feature in the data. Features can then be selected by choosing an appropriate threshold for the stability scores. [10]
 
-  <https://github.com/scikit-learn-contrib/stability-selection> 
+  
 
 ## Embedded特征选择
 
@@ -241,4 +241,4 @@ sklearn.feature_selection模块适用于样本的特征选择/维数降低
 9. [Selecting good features – Part IV: stability selection, RFE and everything side by side](https://blog.datadive.net/selecting-good-features-part-iv-stability-selection-rfe-and-everything-side-by-side/)
 
 10. https://thuijskens.github.io/2018/07/25/stability-selection/
-   https://thuijskens.github.io/2017/10/07/feature-selection/
+      https://thuijskens.github.io/2017/10/07/feature-selection/
