@@ -2,7 +2,7 @@
 
 特征选择是特征工程里的一个重要问题，目的是找到最优特征子集。**减少特征个数**，减少运行时间，提高模型精确度；**更好的理解特征**，及其与label之间的相关性。
 
-- Filter（过滤法）：按照发散性或者相关性对各个特征进行评分，设定阈值或者待选择阈值的个数，选择特征。
+- Filter（过滤法）：按照发散性或者相关性对各个特征进行评分，设定阈值或者待选择阈值的个数，选择特征。注意，过滤法不能减弱特征间的共线性。
 - Wrapper（包装法）：根据目标函数（通常是预测效果评分），每次选择若干特征，或者排除若干特征。
 - Embedded（嵌入法）：先使用某些机器学习的算法和模型进行训练，得到各个特征的权值系数，根据系数从大到小排序选择特征。类似于Filter方法，但是是通过训练来确定特征的优劣。
 
@@ -32,7 +32,7 @@
 
    Relying only on the correlation value on interpreting the relationship of two variables can be highly misleading, so it is always worth plotting the data[6]
 
-3. **互信息和最大信息系数** Mutual information and maximal information coefficient (MIC)
+2. **互信息和最大信息系数** Mutual information and maximal information coefficient (MIC)
 
    MI评价自变量与因变量的相关性。当$$x_i$$为0/1取值时，$$MI(x_i,y) = \sum\limits_{x_i\in\{0,1\}}\sum\limits_{y\in\{0,1\}}p(x_i,y)\log\frac{p(x_i,y)}{p(x_i)p(y)}$$，同理也很容易推广到多个离散值情形。可以发现MI衡量的是$$x_i$$和$$y$$的独立性，如果两者独立，MI=0，即$$x_i$$和$$y$$不相关，可以去除$$x_i$$；反之两者相关，MI会很大。
 
@@ -46,13 +46,13 @@
    m.compute_score(x, x**2)
    print m.mic() # output: 1, the maximum
    ```
-2. Distance Correlation
+3. Distance Correlation
 
    Pearson相较MIC或者Distance correlation的优势：1. 计算速度快；2. correlaiton的取值区间是[-1,1]，体现正负相关性
-   
+
 4. 卡方验证（**常用**）
 
-   检验自变量与因变量的相关性。假设自变量有N种取值，因变量有M种取值，自变量等于i且因变量等于j的样本频数的观察值与期望的差距：$$\chi^2 = \sum\frac{(A-E)^2}{E}$$.
+   基于频率分布来检验分类变量间的相关性。假设自变量有N种取值，因变量有M种取值，自变量等于i且因变量等于j的样本频数的观察值与期望的差距：$$\chi^2 = \sum\frac{(A-E)^2}{E}$$.
 
    ```python
    from sklearn.datasets import load_iris
@@ -72,12 +72,12 @@
    from sklearn.cross_validation import cross_val_score, ShuffleSplit
    from sklearn.datasets import load_boston
    from sklearn.ensemble import RandomForestRegressor
-
+   
    boston = load_boston()
    X = boston["data"]
    Y = boston["target"]
    names = boston["feature_names"]
-
+   
    rf = RandomForestRegressor(n_estimators=20, max_depth=4)
    scores = []
    for i in range(X.shape[1]):
@@ -86,7 +86,7 @@
         score = cross_val_score(rf, X[:, i:i+1], Y, scoring="r2",
                                  cv=ShuffleSplit(len(X), 3, .3))
         scores.append((round(np.mean(score), 3), names[i]))
-
+   
    #打印出各个特征所对应的得分
    print(sorted(scores, reverse=True))
    ```
@@ -102,7 +102,9 @@
    print(sel.fit_transform(X))
    ```
 
-   
+
+7. LDA：考察特征的线性组合能否区分一个分类变量
+8. ANOVA：原理和LDA类似只是它常用于特征是分类变量，响应变量是连续变量的情况下，它提供了不同组的均值是否相同的统计量
 
 ## Wrapper特征选择
 
@@ -233,9 +235,16 @@
   ```
 
 
-- Boruta
+- Boruta [11]
 
-  `Boruta` is produced as an improvement over `random forest` variable importance. 
+  通常意义上用机器学习进行特征选择的目标是: 筛选出可以**使得当前模型cost function最小**的特征集合。如果删除某个特征，模型性能不变，未必说明该特征不相关，只能说明对于减小模型cost function没有帮助。Boruta的目标是：选出与label相关的特征，而不是选出另cost function最小的特征集合。Boruta能保留对模型有显著贡献的**所有**特征，这与很多特征降维方法使用的“最小最优特征集”思路相反。
+
+  `Boruta` is produced as an improvement over `random forest` variable importance. Boruta在回归和分类问题上均可使用，要求基模型带有`feature_impotances_`属性。
+
+  1. duplicate dataset, shuffle the values in each columns, to obtain **shadow features**
+  2. train a classifier on merged dataset (real + shadow), and get importances of features. (树的ensemble模型的优势：对非线形的复杂数据支持；适合处理小样本多特征的数据。尽管这些模型也会过拟合，但是比其他模型过拟合速度慢)
+  3. check for each real feature if they have higher importance than the best of shadow features. If they do, record this in a vector.
+  4. At every iteration, check if a given feature is doing better than random chance, by simply comparing the number of times a feature did better than the shadow features using a binomial distribution. ![compare real feature with the max of shadow features](http://danielhomola.com/wp-content/uploads/2015/05/boruta2.png) 例如：F1在3次迭代的结果都优于shadow feature的最大值，使用binomial分布（k=3,n=3,p=0.5）计算p-value，如果p-value小于0.01就认为F1是与lable有相关性的，并删除F1对其余特征继续迭代。如果某特征连续15次没有超过shadow feature的max值，直接否决该特征，删除。持续这样做，直到达到迭代次数（或者所有特征都入选或否决）。
 
 ## 参考资料
 
@@ -268,4 +277,6 @@ sklearn.feature_selection模块适用于样本的特征选择/维数降低
 9. [Selecting good features – Part IV: stability selection, RFE and everything side by side](https://blog.datadive.net/selecting-good-features-part-iv-stability-selection-rfe-and-everything-side-by-side/)
 
 10. https://thuijskens.github.io/2018/07/25/stability-selection/
-      https://thuijskens.github.io/2017/10/07/feature-selection/
+     https://thuijskens.github.io/2017/10/07/feature-selection/
+
+11. [BorutaPy – an all relevant feature selection method](http://danielhomola.com/2015/05/08/borutapy-an-all-relevant-feature-selection-method/)
