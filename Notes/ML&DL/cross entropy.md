@@ -41,8 +41,28 @@ N个样本的损失函数：$Loss =-\frac{1}{N}\sum\limits_{i=1}^N[y_i \log\hat{
 > 尽管交叉熵刻画的是两个概率分布之间的距离，但是神经网络的输出却不一定是一个概率分布。为此我们常常用Softmax将神经网络前向传播得到的结果变成概率分布。[2]
 >
 > 在分类问题中用交叉熵可以更好的体现loss的同时，使其仍然是个凸函数，这对于梯度下降时的搜索很有用。反观平方和函数，经过softmax后使得函数是一个非凸函数。[2]
+>
+> softmax是由逻辑斯的回归模型（用于二分类）推广得到的多项逻辑斯蒂回归模型（用于多分类）[4]
 
+Softmax函数：假设向量$z$是一维向量，长度为K，$p_i = \frac{e^{z_i}}{\sum_{j=1}^Ke^{z_j}}$，即**softmax把向量z变成向量p，p是概率形式，维度没有变化**。
 
+如果使用交叉熵损失函数，那么这一个样本（一维向量）的损失为$L = -\sum\limits_{k=1}^Ky_k\log p_k$.
+
+### 神经网络中的softmax + 交叉熵
+
+考虑多分类问题，样本的label为0-1向量。假设向量z是神经网络最后一层的输出，这一层共有K个神经元，对应K种不同的分类。 假设最后一层的计算公式为$z_i = \sum\limits_{j}w_{ij}x_{ij} + b_i$，对于神经元$i=1,\dots, K$。
+
+现在考虑softmax+交叉熵在神经网络的反向传播。这里只考虑对最后一层的w和b的导数：$\frac{\partial L}{\partial w_i} = \frac{\partial L}{\partial z_i}\frac{\partial z_i}{\partial w_i}$和$\frac{\partial L}{\partial b_i} = \frac{\partial L}{\partial z_i}\frac{\partial z_i}{\partial b_i}$.
+
+因为$\frac{\partial z_i}{\partial w_i}=x$，$\frac{\partial z_i}{\partial b_i}=1$，所以只需求$\frac{\partial L}{\partial z_i}$。因为任意的$p_k$均包含$z_i$，由链式法则$\frac{\partial L}{\partial z_i} = \sum\limits_{k=1}^K[\frac{\partial L}{\partial p_k}\frac{\partial p_k}{\partial z_i}]$.其中$\frac{\partial L}{\partial p_k} = \frac{\partial(-\sum_{k=1}^Ky_k\log p_k)}{\partial p_k} = -\frac{y_k}{p_k}$，再求$\frac{\partial p_k}{\partial z_i}$，分为两种情况：
+
+- $k\neq i$
+
+  $$\frac{\partial p_k}{\partial z_i} = \frac{\partial(\frac{e^{z_k}}{\sum_{j=1}^Ke^{z_j}})}{\partial z_i} = -e^{z_k}\frac{1}{(\sum_{j=1}^Ke^{z_j})^2}e^{z_i} = -\frac{e^{z_k}}{\sum_{j=1}^Ke^{z_j}}\frac{e^{z_i}}{\sum_{j=1}^Ke^{z_j}} = s_ks_i$$
+
+- $k=i$
+
+  
 
 ## 参考资料
 
@@ -50,3 +70,5 @@ N个样本的损失函数：$Loss =-\frac{1}{N}\sum\limits_{i=1}^N[y_i \log\hat{
 2. [交叉熵(Cross Entropy loss)](https://www.cnblogs.com/o-v-o/p/9975365.html)
 3. [熵与信息增益](<https://blog.csdn.net/xg123321123/article/details/52864830>)
 4. [常用损失函数小结](https://blog.csdn.net/zhangjunp3/article/details/80467350)
+5. [超详细的Softmax求导](<https://blog.csdn.net/bqw18744018044/article/details/83120425>)
+6. <https://gist.github.com/karpathy/d4dee566867f8291f086>
