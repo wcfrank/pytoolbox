@@ -8,4 +8,4 @@
 spacy>=2.0.0,<3.0.0
 https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-2.1.0/en_core_web_sm-2.1.0.tar.gz#egg=en_core_web_sm
 ```
-
+Specifying #egg= with the package name tells pip which package to expect from the download URL. This way, the package won’t be re-downloaded and overwritten if it’s already installed - just like when you’re downloading a package from PyPi.
