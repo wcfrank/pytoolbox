@@ -58,7 +58,7 @@ Softmax函数：假设向量$z$是一维向量，长度为K，$p_i = \frac{e^{z_
 
 - $k\neq i$
 
-  $$\frac{\partial p_k}{\partial z_i} = \frac{\partial(\frac{e^{z_k}}{\sum_{j=1}^Ke^{z_j}})}{\partial z_i} = -e^{z_k}\frac{1}{(\sum_{j=1}^Ke^{z_j})^2}e^{z_i} = -\frac{e^{z_k}}{\sum_{j=1}^Ke^{z_j}}\frac{e^{z_i}}{\sum_{j=1}^Ke^{z_j}} = s_ks_i$$
+  $$\frac{\partial p_k}{\partial z_i} = \frac{\partial(\frac{e^{z_k}}{\sum_{j=1}^Ke^{z_j}})}{\partial z_i} = -e^{z_k}\frac{1}{(\sum_{j=1}^Ke^{z_j})^2}e^{z_i} = -\frac{e^{z_k}}{\sum_{j=1}^Ke^{z_j}}\frac{e^{z_i}}{\sum_{j=1}^Ke^{z_j}} = -p_kp_i$$
 
 - $k=i$
 
