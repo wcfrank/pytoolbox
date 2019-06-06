@@ -16,7 +16,7 @@
 
 交叉熵容易跟相对熵搞混，二者有所区别。 假设有两个分布p，q，它们在给定样本集上的交叉熵定义如下：
 
-$CEH(p,q)=−\sum_{x∈χ}p(x)\log q(x)=H(p)+D_{KL}(p||q)​$
+$CEH(p,q)=−\sum_{x∈χ}p(x)\log q(x)=H(p)+D_{KL}(p||q)$
 
 可以看出，交叉熵与相对熵仅相差了H(p)，当p已知时，可以把H(p)看做一个常数，此时交叉熵与KL距离在行为上是等价的，都反映了分布p，q的相似程度。最小化交叉熵等于最小化KL距离。它们都将在p=q时取得最小值H(p)，因为p=q时KL距离为0。可以证明$D_{KL}(p||q)\ge0$，所以$CEH(p,q)\ge H(p)$.
 
@@ -28,11 +28,11 @@ $CEH(p,q)=−\sum_{x∈χ}p(x)\log q(x)=H(p)+D_{KL}(p||q)​$
 
 ### 交叉熵 + sigmoid
 
-二分类问题，真实样本的标签$y_i\in[0,1]​$，模型最后通过sigmoid函数，输出为一个概率值。概率越大，代表$y_i=1​$的可能性越大。sigmoid公式：$g(s) = \frac{1}{1+e^{-s}}​$，其中s是模型上一层的输出，这里g(s)就是模型预测的输出，预测当前样本标签为1的概率$\hat{y} = P(y=1|x)​$。
+二分类问题，真实样本的标签$y_i\in[0,1]$，模型最后通过sigmoid函数，输出为一个概率值。概率越大，代表$y_i=1$的可能性越大。sigmoid公式：$g(s) = \frac{1}{1+e^{-s}}$，其中s是模型上一层的输出，这里g(s)就是模型预测的输出，预测当前样本标签为1的概率$\hat{y} = P(y=1|x)$。
 
-从极大似然的角度出发，$P(y|x) = \hat{y}^y*(1-\hat{y})^{1-y}​$. 当真实标签$y=0​$，$P(y=0|x) = 1- \hat{y}​$；当$y=1​$，$P(y=1|x) = \hat{y}​$。
+从极大似然的角度出发，$P(y|x) = \hat{y}^y*(1-\hat{y})^{1-y}$. 当真实标签$y=0$，$P(y=0|x) = 1- \hat{y}$；当$y=1$，$P(y=1|x) = \hat{y}$。
 
-变成对数形式，不影响单调性：$\log P(y|x) =y \log\hat{y} +(1-y)\log (1-\hat{y})​$.（其负数形式这就是交叉熵，比较真实和预测的距离）希望交叉熵$-\log P(y|x)​$越小越好，单个样本i的损失函数为$Loss =-[y_i \log\hat{y}_i +(1-y_i)\log (1-\hat{y}_i)]​$
+变成对数形式，不影响单调性：$\log P(y|x) =y \log\hat{y} +(1-y)\log (1-\hat{y})$.（其负数形式这就是交叉熵，比较真实和预测的距离）希望交叉熵$-\log P(y|x)$越小越好，单个样本i的损失函数为$Loss =-[y_i \log\hat{y}_i +(1-y_i)\log (1-\hat{y}_i)]$
 
 N个样本的损失函数：$Loss =-\frac{1}{N}\sum\limits_{i=1}^N[y_i \log\hat{y}_i +(1-y_i)\log (1-\hat{y}_i)]$
 
@@ -58,7 +58,7 @@ Softmax函数：假设向量$z$是一维向量，长度为K，$p_i = \frac{e^{z_
 
 - $k\neq i$
 
-  $$\frac{\partial p_k}{\partial z_i} = \frac{\partial(\frac{e^{z_k}}{\sum_{j=1}^Ke^{z_j}})}{\partial z_i} = -e^{z_k}\frac{1}{(\sum_{j=1}^Ke^{z_j})^2}e^{z_i} = -\frac{e^{z_k}}{\sum_{j=1}^Ke^{z_j}}\frac{e^{z_i}}{\sum_{j=1}^Ke^{z_j}} = -p_kp_i$$
+  $$\frac{\partial p_k}{\partial z_i} = \frac{\partial(\frac{e^{z_k}}{\sum_{j=1}^Ke^{z_j}})}{\partial z_i} = \frac{-e^{z_k}e^{z_i}}{(\sum_{j=1}^Ke^{z_j})^2} = -\frac{e^{z_k}}{\sum_{j=1}^Ke^{z_j}}\frac{e^{z_i}}{\sum_{j=1}^Ke^{z_j}} = -p_kp_i$$
 
 - $k=i$
 
@@ -68,7 +68,7 @@ Softmax函数：假设向量$z$是一维向量，长度为K，$p_i = \frac{e^{z_
 
 $\begin{align}\frac{\partial L}{\partial z_i}&=\sum\limits_{k=1}^K\frac{\partial L}{\partial p_k}\frac{\partial p_k}{\partial z_i}\\ & =\sum\limits_{k=1}^K-\frac{y_k}{p_k}\frac{\partial p_k}{\partial z_i}\\ &=-\frac{y_i}{p_i}p_i(1-p_i)+\sum\limits_{k=1,k\neq i}^K-\frac{y_k}{p_k}-p_kp_i \\ & =y_i(p_i-1)+\sum\limits_{k=1,k\neq i}^K y_kp_i \\ &=p_i\sum\limits_{k=1}^K y_k - y_i \end{align}$
 
-由于是多分类问题，`每个`样本的标签$y=[y_1, y_2, \dots, y_K]$，只会有一个为1，其余均为0，所以$\sum\limits_{k=1}^Ky_k=1$，所以多分类问题，$\frac{\partial L}{\partial z_i}=p_i-y_i$，所以$\frac{\partial L}{\partial w_i}=(p_i-y_i)x_i$，$\frac{\partial L}{\partial b_i}=p_i-y_i$，这里i代表第i个神经元的w和b。
+由于是多分类问题，`每个`样本的标签$y=[y_1, y_2, \dots, y_K]$，只会有一个为1，其余均为0，所以$\sum\limits_{k=1}^Ky_k=1$，所以多分类问题，$\frac{\partial L}{\partial z_i}=p_i-y_i$，所以$\frac{\partial L}{\partial w_i}=(p_i-y_i)x_i$，$\frac{\partial L}{\partial b_i}=p_i-y_i$，这里i代表第i个神经元的w和b。**以上只是对一个样本的反向传播**。
 
 ## 参考资料
 
