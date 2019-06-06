@@ -62,7 +62,13 @@ Softmax函数：假设向量$z$是一维向量，长度为K，$p_i = \frac{e^{z_
 
 - $k=i$
 
-  
+  $ \begin{align} \frac{\partial p_i}{\partial z_i} &= \frac{\partial\left( \frac{e^{z_i}}{\sum_{j=1}^Ke^{z_j}}\right)}{\partial z_i} \\ &= \frac{e^{z_i}\sum_{j=1}^Ke^{z_j} - (e^{z_i})^2}{\left( \sum_{j=1}^Ke^{z_j}\right)^2}  \\ &= \frac{e^{z_i}}{\sum_{j=1}^Ke^{z_j}}\frac{\sum_{j=1}^Ke^{z_j}-e^{z_i}}{\sum_{j=1}^Ke^{z_j}} \\ & = \frac{e^{z_i}}{\sum_{j=1}^Ke^{z_j}}\left(1- \frac{e^{z_i}}{\sum_{j=1}^Ke^{z_j}}\right)  \\ & = p_i(1-p_i)\end{align} $
+
+综上，
+
+$\begin{align}\frac{\partial L}{\partial z_i}&=\sum\limits_{k=1}^K\frac{\partial L}{\partial p_k}\frac{\partial p_k}{\partial z_i}\\ & =\sum\limits_{k=1}^K-\frac{y_k}{p_k}\frac{\partial p_k}{\partial z_i}\\ &=-\frac{y_i}{p_i}p_i(1-p_i)+\sum\limits_{k=1,k\neq i}^K-\frac{y_k}{p_k}-p_kp_i \\ & =y_i(p_i-1)+\sum\limits_{k=1,k\neq i}^K y_kp_i \\ &=p_i\sum\limits_{k=1}^K y_k - y_i \end{align}$
+
+由于是多分类问题，`每个`样本的标签$y=[y_1, y_2, \dots, y_K]$，只会有一个为1，其余均为0，所以$\sum\limits_{k=1}^Ky_k=1$，所以多分类问题，$\frac{\partial L}{\partial z_i}=p_i-y_i$，所以$\frac{\partial L}{\partial w_i}=(p_i-y_i)x_i$，$\frac{\partial L}{\partial b_i}=p_i-y_i$，这里i代表第i个神经元的w和b。
 
 ## 参考资料
 
