@@ -27,7 +27,7 @@ learning_rate = 1e-1
 
 模型的参数：不同时间状态下，参数是共享的
 
-![rnn](D:\Python_Programming\pytoolbox\Notes\images\vanilla_rnn.jpg)
+![rnn](../images/vanilla_rnn.jpg)
 
 - `Wxh`：从输入x到hidden state的变换，维度：（`x的维度`，`隐藏层维度`）。假设输入x代表一个单词，是通过one-hot编码的，每一个x的维度是（vocab_size, 1）
 
@@ -90,12 +90,22 @@ def lossFun(inputs, targets, hprev):
 
 `hs[-1] = np.copy(hprev)`表示上一次batch最后隐藏层的状态，作为这一次batch隐藏层的初始状态。
 
-**前向传播**：$t=0, \dots,​$ seq_length-1
+**前向传播**：$t=0, \dots,$ seq_length-1
 
 - `xs[t]`：one-hot encoder，从index变成one-hot向量，维度(vocab_size,1)
-- `hs[t]`：$\tanh(W_{xh}*xs[t] + W_{hh}*hs[t-1] + b_h)$，t时刻的输入，与上个时刻的隐藏层相加（也有的是拼接），维度(hiddn_size, 1)
-- `ys[t]`：$W_{hy}*hs[t] + b_y$，输出，但没有做normalize，维度(vocab_size, 1)
+- `hs[t]`：$\tanh(W_{xh}*xs[t] + W_{hh}*hs[t-1] + b_h)$，t时刻的输入，与上个时刻的隐藏层相加（也有的是拼接），维度(hiddn_size, 1)。在后面的反向传播中，tanh函数里面的部分为hraw，通过tanh激活后为h。
+- `ys[t]`：$y=W_{hy}*hs[t] + b_y$，输出，但没有做normalize，维度(vocab_size, 1)
 - `ps[t]`：`ys[t]`做过normalize之后，变成概率，维度(vocab_size, 1)
-- `loss`：cross-entropy（$L = -\sum\limits_{k=1}^Ky_k\log p_k​$）。如果target也是one-hot编码，只有第`target[t]`个元素是1，其他位置均为0，这个词的cross-entropy损失只需要计算第`target[t]`项元素的概率`ps[t][targets[t],0]`*1
+- `loss`：cross-entropy（$L = -\sum\limits_{k=1}^Ky_k\log p_k$，K=vocab_size）。如果target也是one-hot编码，只有第`target[t]`个元素是1，其他位置均为0，这个词的cross-entropy损失只需要计算第`target[t]`项元素的概率`ps[t][targets[t],0]`*1
 
 **反向传播**：t=seq_length-1, $\dots,$ 0
+
+- `dy`：（参考另一篇的推导）$\frac{\partial L}{\partial y} = p-y$，最后的softmax层有vocab_size个神经元，对应vocab_size个分类。y只有第`target[t]`项元素为1，其余均为0，所以`dy[targets[t]] -= 1`
+- `dWhy`：$\frac{\partial L}{\partial W_{hy}} =  \frac{\partial L}{\partial y}\frac{\partial y}{\partial W_{hy}} = dy*hs[t]$
+- `dby`：$\frac{\partial L}{\partial b_y} =  \frac{\partial L}{\partial y}\frac{\partial y}{\partial b_y} = dy*1$
+- `dh`：$\frac{\partial L}{\partial h} =  \frac{\partial L}{\partial y}\frac{\partial y}{\partial h} =dy* W_{hy}+ dh_{next}$，参考上图，`dh`由两部分组成，一部分从当前时刻的y得到，另一部分由下一时刻的`dhraw`得到。 
+- `dhraw`：$\frac{\partial L}{\partial h_{raw}} = \frac{\partial L}{\partial h}\frac{\partial h}{\partial h_{raw}} = dh*(1-hs[t]^2)$ ????? hs是h还是hraw
+- `dbh`：
+- `dWxh`：
+- `dWhh`：
+- `dhnext`：
