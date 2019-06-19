@@ -104,8 +104,43 @@ def lossFun(inputs, targets, hprev):
 - `dWhy`：$\frac{\partial L}{\partial W_{hy}} =  \frac{\partial L}{\partial y}\frac{\partial y}{\partial W_{hy}} = dy*hs[t]$
 - `dby`：$\frac{\partial L}{\partial b_y} =  \frac{\partial L}{\partial y}\frac{\partial y}{\partial b_y} = dy*1$
 - `dh`：$\frac{\partial L}{\partial h} =  \frac{\partial L}{\partial y}\frac{\partial y}{\partial h} =dy* W_{hy}+ dh_{next}$，参考上图，`dh`由两部分组成，一部分从当前时刻的y得到，另一部分由下一时刻的`dhraw`得到。 
-- `dhraw`：$\frac{\partial L}{\partial h_{raw}} = \frac{\partial L}{\partial h}\frac{\partial h}{\partial h_{raw}} = dh*(1-hs[t]^2)$ ????? hs是h还是hraw
-- `dbh`：
-- `dWxh`：
-- `dWhh`：
-- `dhnext`：
+- `dhraw`：$\frac{\partial L}{\partial h_{raw}} = \frac{\partial L}{\partial h}\frac{\partial h}{\partial h_{raw}} = dh*(1-hs[t]^2)$，因为$\tanh'(x) = 1-\tanh^2(x)$
+- `dbh`：$\frac{\partial L}{\partial b_h} = \frac{\partial L}{\partial h_{raw}} \frac{\partial h_{raw}}{\partial b_h} = dh_{raw}$ 
+- `dWxh`：$\frac{\partial L}{\partial W_{xh}} = \frac{\partial L}{\partial h_{raw}} \frac{\partial h_{raw}}{\partial W_{xh}} = dh_{raw}*xs[t]$
+- `dWhh`：$\frac{\partial L}{\partial W_{hh}} = \frac{\partial L}{\partial h_{raw}} \frac{\partial h_{raw}}{\partial W_{hh}} = dh_{raw}*hs[t-1]$
+- `dhnext`：$\frac{\partial L}{\partial h_{next}} = \frac{\partial L}{\partial h_{raw}}\frac{\partial h_{raw}}{\partial h_{next}} = dh_{raw}*W_{hh}$，这个是用做t-1时刻求`dh`的一部分
+
+参数（dWhy，dby，dWxh，dWhh，dbh）都是所有seq_length时刻累积的，其他（dy，dh，dhraw，dhnext）都是每个时刻相互独立。这是因为参数都是共享的，但其他量都是由输入决定。
+
+## main函数
+
+```python
+n, p = 0, 0
+mWxh, mWhh, mWhy = np.zeros_like(Wxh), np.zeros_like(Whh), np.zeros_like(Why)
+mbh, mby = np.zeros_like(bh), np.zeros_like(by) # memory variables for Adagrad
+smooth_loss = -np.log(1.0/vocab_size)*seq_length # loss at iteration 0
+while True:
+  	# prepare inputs (we're sweeping from left to right in steps seq_length long)
+  	if p+seq_length+1 >= len(data) or n == 0: 
+      	hprev = np.zeros((hidden_size,1)) # reset RNN memory
+    		p = 0 # go from start of data
+  	inputs = [char_to_ix[ch] for ch in data[p:p+seq_length]]
+  	targets = [char_to_ix[ch] for ch in data[p+1:p+seq_length+1]]
+
+  	# forward seq_length characters through the net and fetch gradient
+  	loss, dWxh, dWhh, dWhy, dbh, dby, hprev = lossFun(inputs, targets, hprev)
+  	smooth_loss = smooth_loss * 0.999 + loss * 0.001
+  	if n % 100 == 0: print 'iter %d, loss: %f' % (n, smooth_loss) # print progress
+  
+  	# perform parameter update with Adagrad
+  	for param, dparam, mem in zip([Wxh, Whh, Why, bh, by], 
+                                [dWxh, dWhh, dWhy, dbh, dby], 
+                                [mWxh, mWhh, mWhy, mbh, mby]):
+    		mem += dparam * dparam
+    		param += -learning_rate * dparam / np.sqrt(mem + 1e-8) # adagrad update
+
+  	p += seq_length # move data pointer
+ 		n += 1 # iteration counter 
+```
+
+`inputs`和`targets`都是长度为seq_length的数字的序列。调用`lossFun`函数得到参数的导数、loss等。参数的更新方式为adagrad。
