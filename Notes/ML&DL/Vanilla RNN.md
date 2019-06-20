@@ -143,4 +143,4 @@ while True:
  		n += 1 # iteration counter 
 ```
 
-`inputs`和`targets`都是长度为seq_length的数字的序列。调用`lossFun`函数得到参数的导数、loss等。参数的更新方式为adagrad。
+`inputs`和`targets`都是长度为seq_length的数字的序列，意味着每次喂给rnn模型seq_length个单词来训练。调用`lossFun`函数得到参数的导数、loss等。参数的更新方式为adagrad。
