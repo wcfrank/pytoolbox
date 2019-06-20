@@ -112,6 +112,8 @@ def lossFun(inputs, targets, hprev):
 
 参数（dWhy，dby，dWxh，dWhh，dbh）都是所有seq_length时刻累积的，其他（dy，dh，dhraw，dhnext）都是每个时刻相互独立。这是因为参数都是共享的，但其他量都是由输入决定。
 
+反向传播的导数，都是对单个输入单词（一个时刻）的导数。即损失函数L其实是某一个样本的损失函数，如$L^t$. 虽然从代码上来看，大多数都是当前时刻对参数的影响，除了`dh`有上一个时刻的导数部分，实际上就是因为`dh`这一步，可以让t时刻损失函数（比如$L^4$）可以影响到前面好几个时刻之外的h（比如$h^1$）：$\frac{\partial L^4}{\partial h^1} = \frac{\partial L^4}{\partial h^4}\frac{\partial h^4}{\partial h^3}\frac{\partial h^3}{\partial h^2}\frac{\partial h^2}{\partial h^1}$.
+
 ## main函数
 
 ```python
