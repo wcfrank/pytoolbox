@@ -88,3 +88,18 @@ git diff master new_branch ./diff_test.txt
 ```
 
 ## 3. git stash
+## 4. git log 显示已提交的快照(只作用于已提交的历史）
+- `git log -n 3` 只显示3个提交
+- `git log --oneline`将每个提交压缩到一行
+- `git log --stat` 除了 git log 信息之外，包含哪些文件被更改了，以及每个文件相对的增删行数
+- `git log -p` 显示代表每个提交的一堆信息。显示每个提交全部的差异（diff），这也是项目历史中最详细的视图
+- `git log --author="<pattern>"` 搜索特定作者的提交。<pattern> 可以是字符串或正则表达式
+- `git log --grep="<pattern>"` 搜索提交信息匹配特定 <pattern> 的提交。<pattern> 可以是字符串或正则表达式
+- `git log <since>..<until>` 只显示发生在 <since> 和 <until> 之间的提交。两个参数可以是提交 ID、分支名、HEAD 或是任何一种引用
+- **`git log <file>`** 只显示包含特定文件的提交。查找特定文件的历史这样做会很方便
+- `git log --graph --decorate --oneline` 还有一些有用的选项: --graph 标记会绘制一幅字符组成的图形，左边是提交，右边是提交信息；--decorate 标记会加上提交所在的分支名称和标签；--oneline 标记将提交信息显示在同一行，一目了然
+
+#### 例子
+1. `git log --author="John Smith" -p hello.py` 这个命令会显示 John Smith 作者对 hello.py 文件所做的所有更改的差异比较（diff）
+2. `git log --oneline master..some-feature` ..句法是比较分支很有用的工具，这条命令显示了在 some-feature 分支而不在 master 分支的所有提交的概览
+
