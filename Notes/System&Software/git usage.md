@@ -103,3 +103,36 @@ git diff master new_branch ./diff_test.txt
 1. `git log --author="John Smith" -p hello.py` 这个命令会显示 John Smith 作者对 hello.py 文件所做的所有更改的差异比较（diff）
 2. `git log --oneline master..some-feature` ..句法是比较分支很有用的工具，这条命令显示了在 some-feature 分支而不在 master 分支的所有提交的概览
 
+## 5. git revert
+git revert 命令用来撤销一个已经提交的快照。但是，它是通过搞清楚如何撤销这个提交引入的更改，
+然后在最后加上一个撤销了更改的*新*提交，而不是从项目历史中移除这个提交。
+下面的这个栗子是 git revert 一个简单的演示。它提交了一个快照，然后立即撤销这个操作。
+
+```shell
+# 编辑一些跟踪的文件
+# 提交一份快照
+git commit -m "Make some changes that will be undone"
+# 撤销刚刚的提交
+git revert HEAD
+```
+
+## 6. git commit --amend 修复最新提交
+将缓存的修改和之前的提交合并到一起，而不是提交一个全新的快照。它还可以用来简单地编辑上一次提交的信息而不改变快照。
+amend 不只是修改了最新的提交——它进行了一次替换。
+合并缓存的修改和上一次的提交，用新的快照替换上一个提交。
+缓存区没有文件时运行这个命令可以用来编辑上次提交的提交信息，而不会更改快照。
+
+**但不要修复公共提交**
+
+仓促的提交在你日常开发过程中时常会发生。很容易就忘记了缓存一个文件或者弄错了提交信息的格式。**--amend标记是修复这些小意外的便捷方式。**
+```shell
+# 编辑 hello.py 和 main.py
+git add hello.py
+git commit
+
+# 意识到你忘记添加 main.py 的更改
+git add main.py
+git commit --amend --no-edit
+```
+编辑器会弹出上一次提交的信息，加入 --no-edit 标记会修复提交但不修改提交信息。
+完整的提交会替换之前不完整的提交，看上去就像我们在同一个快照中提交了 hello.py 和 main.py。
