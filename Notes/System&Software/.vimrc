@@ -2,6 +2,8 @@ set number
 syntax on
 set pastetoggle=<F2>
 set hlsearch
+"set tabs to have 4 spaces
+set ts=4 
 "set foldmethod=indent
 
 let mapleader=','
