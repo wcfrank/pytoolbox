@@ -36,13 +36,13 @@ this is a git difftest example
 -->
 ### （重要）搞清楚git diff, git diff --cached和git diff HEAD
 Git官网上的解释：
-- git diff [<options>] [--] [<path>…]
+- git diff [options] [--] [path…]  <br>
   This form is to view the changes you made relative to the index (staging area for the next commit). In other words, the differences are what you could tell Git to further add to the index but you still haven’t. You can stage these changes by using `git-add`.
   默认情况下， `git diff` 会显示所有没有被`git add`的修改。
-- git diff [<options>] --cached [<commit>] [--] [<path>…]
+- git diff [options] --cached [commit] [--] [path…]  <br>
   This form is to view the changes you staged for the next commit relative to the named <commit>. Typically you would want comparison with the latest commit, so if you do not give <commit>, it defaults to HEAD. --staged is a synonym of --cached.
   `git diff --cached`会显示已经`git add`但没有`git commit`的内容，跟HEAD（也可以是其他commits）比较的修改。
-- git diff [<options>] <commit> [--] [<path>…]
+- git diff [options] [commit] [--] [path…]  <br>
   This form is to view the changes you have in your working tree relative to the named <commit>. You can use HEAD to compare it with the latest commit, or a branch name to compare with the tip of a different branch.
   `git diff HEAD`会显示工作区与HEAD比较的修改。
 
