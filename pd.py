@@ -20,3 +20,16 @@ cat_features = [x for x in train.select_dtypes(include=['object']).columns] # ou
 num_features = [x for x in train.select_dtypes(exclude=['object']).columns]
 
 df['C'] = df['C'].astype('category').cat.codes # output: a series with value: 1, 0, 0, 1 
+
+# dataframe weighted average:
+# groupby之后，求每个group里面，根据某一列作为weights，其他几列的加权平均值
+# https://stackoverflow.com/a/33575217
+def weighted_sum(df, var_list, weight_var):
+    """
+    output weighted average for the columns with another column as weights.
+    `np.average(df[var_list], axis=0, weights=df[weight_var]` will calucate
+    the averages of columns `var_list`, with weights of `weight_var`;
+    Then make the output array as a pandas series.
+    """
+    return pd.Series(np.average(df[var_list], axis=0, weights=df[weight_var]), index=var_list)
+df.groupby(by='C').apply(weighted_sum, var_list=['A'], weight_var='B')
